@@ -1,0 +1,107 @@
+{% extends "public/templates/public_template.html" %}
+
+{% block title %}Auton hintalaskuri{% endblock %}
+
+{% block main %}
+
+<body>
+    <form action="/rekisterinumerohaku" method="POST" id="lpForm">
+        <h1 id="arvo">Selvitä autosi arvo</h1>
+
+        <div class="contentform">
+            <div class="form-group">
+                <p>Rekisterinumero</p>
+                <span class="icon-case"><img src="{{ url_for('static', filename='img/license-plate.svg') }}"
+                        class="icon-image" /></span>
+                <input type="text" id="licenseplate" placeholder="ABC-123"
+                    pattern="[A-z]{1,3}-[0-9]{1,3}" required><br><br>
+            </div>
+
+            <div class="form-group">
+                <p>Mittarilukema</p>
+                <span class="icon-case"><img src="{{ url_for('static', filename='img/tachometer.svg') }}"
+                        class="icon-image" /></span>
+                <select class="form-control" id="mileage-choice" name="mileage-choice" required>
+                    <option value="">Valitse...</option>
+                    <option value=0>0 km</option>
+                    {%for i in range(5,450,5)%}
+                    <option value={{i}}>{{i}} 000 km</option>
+                    {%endfor%}
+                </select>
+                <div class="validation"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="form-button">
+                <button type="submit" class="btn btn-primary">Anna hinta-arvio</button>
+            </div>
+            <a class="manual-analysator" href="/hintalaskuri">Kokeile hintalaskurilla</a>
+        </div>
+
+        <script>
+            $('#lpForm').on('submit', function (event) {
+                $('#price-text').text("Analysoidaan").delay(1500)
+                $('.car-data').hide() 
+                $('.manual-analysator').hide() 
+                event.preventDefault();
+                $.ajax({
+                    type: 'POST',
+                    url: '/rekisterinumerohaku',
+                    data: {
+                        licenseplate: $('#licenseplate').val(),
+                        mileage: $('#mileage-choice').val(),
+                    }
+                })
+                    .done(function (data) {
+
+                        $('#maker-text span').text(data.maker);
+                        $('#model-text span').text(data.model);
+                        $('#mileage-text span').text(data.mileage);
+                        $('#year-text span').text(data.year);
+                        $('#sub_type-text span').text(data.sub_type);
+                        $('#engine_size-text span').text(data.engine_size);
+                        $('#transmission-text span').text(data.transmission);
+                        $('#drivetrain-text span').text(data.drivetrain);
+                        $('#fuel-text span').text(data.fuel);
+                        $('#power-text span').text(data.power);
+
+                        if(data.teksti != ""){
+                            $('.car-data').show() 
+                            $('#price-text').text(data.teksti);
+                        }
+                        else {
+                            if (data.maker=="False") {
+                                $('#price-text').text("Rekisterinumeroa ei löytynyt tietokannasta.");
+                            } else {
+                                $('#price-text').text("Arvon määritys ei onnistunut.");
+                                $('.car-data').show();
+                            }
+                            $('.manual-analysator').show() 
+                        }
+                    });
+            });
+
+        </script>
+        <h1 class="float-center" id='price-text'></h1>
+        <!--Näihin kaikkiin sama hide luokka, joka menee piiloon aina aluksi-->
+        <div class="row">
+            <div class="leftcontact">
+                <p class="car-data" id='maker-text'><strong>Merkki: </strong><span></span></p>
+                <p class="car-data" id='model-text'><strong>Malli: </strong><span></span></p>
+                <p class="car-data" id='sub_type-text'><strong>Korimalli: </strong><span></span></p>
+                <p class="car-data" id='year-text'><strong>Vuosimalli: </strong><span></span></p>
+                <p class="car-data" id='engine_size-text'><strong>Moottorin tilavuus: </strong><span></span> litraa</p>
+            </div>
+            <div class="rightcontact">
+                <p class="car-data" id='fuel-text'><strong>Käyttövoima: </strong><span></span></p>
+                <p class="car-data" id='transmission-text'><strong>Vaihteisto: </strong><span></span></p>
+                <p class="car-data" id='drivetrain-text'><strong>Vetotapa: </strong><span></span></p>
+                <p class="car-data" id='mileage-text'><strong>Mittarilukema: </strong><span></span> 000 km</p>
+                <p class="car-data" id='power-text'><strong>Teho: </strong><span></span> Hv</p>
+            </div>
+        </div>
+    </form>
+</body>
+
+</html>
+{% endblock %}
